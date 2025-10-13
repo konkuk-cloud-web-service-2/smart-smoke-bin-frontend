@@ -1,34 +1,46 @@
-"use client"
+"use client";
 
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
-
-const hourlyData = [
-  { hour: "00", count: 45 },
-  { hour: "03", count: 23 },
-  { hour: "06", count: 67 },
-  { hour: "09", count: 189 },
-  { hour: "12", count: 312 },
-  { hour: "15", count: 267 },
-  { hour: "18", count: 234 },
-  { hour: "21", count: 156 },
-]
-
-const locationData = [
-  { location: "강남구", count: 4234 },
-  { location: "서초구", count: 3891 },
-  { location: "송파구", count: 3456 },
-  { location: "마포구", count: 2987 },
-  { location: "용산구", count: 2654 },
-]
+import { useEffect, useState } from "react";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { getHourlyUsage, getRegionUsage } from "@/lib/api/analytics";
+import type { HourlyPoint, RegionPoint } from "@/types/analytics";
 
 interface UsageChartProps {
-  type: "hourly" | "location"
+  type: "hourly" | "location";
 }
 
 export function UsageChart({ type }: UsageChartProps) {
-  const data = type === "hourly" ? hourlyData : locationData
-  const dataKey = type === "hourly" ? "hour" : "location"
-  const barColor = type === "hourly" ? "#a78bfa" : "#2dd4bf"
+  const [data, setData] = useState<Array<any>>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      setErr(null);
+      try {
+        if (type === "hourly") {
+          const res: HourlyPoint[] = await getHourlyUsage();
+          if (alive) setData(res);
+        } else {
+          const res: RegionPoint[] = await getRegionUsage();
+          if (alive) setData(res);
+        }
+      } catch (e: any) {
+        if (alive) setErr(e?.message || "데이터를 불러오지 못했습니다");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, [type]);
+
+  const dataKey = type === "hourly" ? "hour" : "location";
+  const barColor = type === "hourly" ? "#a78bfa" : "#2dd4bf";
+
+  if (loading) return <div className="text-sm text-muted-foreground">불러오는 중…</div>;
+  if (err) return <div className="text-sm text-destructive">{err}</div>;
 
   return (
     <div className="bg-black/20 rounded-lg p-4">
@@ -50,5 +62,5 @@ export function UsageChart({ type }: UsageChartProps) {
         </BarChart>
       </ResponsiveContainer>
     </div>
-  )
+  );
 }

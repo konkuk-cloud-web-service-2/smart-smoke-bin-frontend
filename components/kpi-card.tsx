@@ -1,55 +1,61 @@
-import { Card } from "@/components/ui/card"
-import type { LucideIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
+"use client";
 
-interface KPICardProps {
-  title: string
-  value: string
-  change: string
-  trend: "up" | "down" | "warning"
-  icon: LucideIcon
-  description: string
-}
+import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { TrendingUp, Calendar, MapPin, Clock } from "lucide-react";
+import { getKpis } from "@/lib/api/kpi";
+import type { KpiItem } from "@/types/kpi";
 
-export function KPICard({ title, value, change, trend, icon: Icon, description }: KPICardProps) {
+export function KpiCards() {
+  const [data, setData] = useState<KpiItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      setErr(null);
+      try {
+        const list = await getKpis();
+        if (alive) setData(list);
+      } catch (e: any) {
+        if (alive) setErr(e?.message || "불러오기 실패");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (loading)
+    return <div className="text-sm text-muted-foreground">불러오는 중…</div>;
+  if (err) return <div className="text-sm text-destructive">{err}</div>;
+
+  const icons: Record<string, JSX.Element> = {
+    growth: <TrendingUp className="h-5 w-5 text-chart-1" />,
+    daily: <Calendar className="h-5 w-5 text-chart-2" />,
+    region: <MapPin className="h-5 w-5 text-chart-3" />,
+    peak: <Clock className="h-5 w-5 text-chart-4" />,
+  };
+
   return (
-    <Card className="p-6">
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold">{value}</p>
-          <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                "text-sm font-medium",
-                trend === "up" && "text-accent",
-                trend === "down" && "text-destructive",
-                trend === "warning" && "text-destructive",
-              )}
-            >
-              {change}
-            </span>
-            <span className="text-xs text-muted-foreground">{description}</span>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {data.map((kpi) => (
+        <Card key={kpi.id} className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+              {icons[kpi.id] || <TrendingUp className="h-5 w-5 text-accent" />}
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{kpi.label}</p>
+              <p className="text-xl font-bold">{kpi.value}</p>
+            </div>
           </div>
-        </div>
-        <div
-          className={cn(
-            "h-12 w-12 rounded-lg flex items-center justify-center",
-            trend === "up" && "bg-accent/10",
-            trend === "down" && "bg-destructive/10",
-            trend === "warning" && "bg-destructive/10",
-          )}
-        >
-          <Icon
-            className={cn(
-              "h-6 w-6",
-              trend === "up" && "text-accent",
-              trend === "down" && "text-destructive",
-              trend === "warning" && "text-destructive",
-            )}
-          />
-        </div>
-      </div>
-    </Card>
-  )
+        </Card>
+      ))}
+    </div>
+  );
 }
