@@ -58,7 +58,7 @@ export function HardwareInterface() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch(`http://smart-smoke-env.eba-nnpifr7u.ap-northeast-2.elasticbeanstalk.com/devices`, {
+        const res = await fetch(`https://u0r3k4is4k.execute-api.ap-northeast-2.amazonaws.com/Prod/devices`, {
           cache: 'no-store'
         });
         const response = await res.json();
@@ -96,7 +96,7 @@ export function HardwareInterface() {
 
   // --- 2. 👇 시뮬레이션 핸들러 3개 API 연동 ---
 
-  const API_BASE_URL = "http://smart-smoke-env.eba-nnpifr7u.ap-northeast-2.elasticbeanstalk.com";
+  const API_BASE_URL = "https://u0r3k4is4k.execute-api.ap-northeast-2.amazonaws.com/Prod";
 
   /**
    * (수정) 꽁초 투입 시뮬레이션: POST .../simulate/drop
@@ -109,7 +109,10 @@ export function HardwareInterface() {
 
     try {
       const res = await fetch(`${API_BASE_URL}/devices/${selectedDeviceId}/simulate/drop`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       const response = await res.json();
       if (response.success && response.data) {
@@ -135,7 +138,10 @@ export function HardwareInterface() {
     setIsAnimating(true);
     try {
       const res = await fetch(`${API_BASE_URL}/devices/${selectedDeviceId}/simulate/reset`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       const response = await res.json();
       if (response.success && response.data) {
@@ -156,7 +162,10 @@ export function HardwareInterface() {
     setIsAnimating(true);
     try {
       const res = await fetch(`${API_BASE_URL}/devices/${selectedDeviceId}/simulate/full`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       const response = await res.json();
       if (response.success && response.data) {

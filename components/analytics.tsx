@@ -11,7 +11,7 @@ interface ApiDevice {
   id: string; // 고유 UUID
   device_id: string; // "SB001"
   location: string;
-  status: "active" | "maintenance" | "offline" | string;
+  status: "active" | "maintenance" | "offline" | "full";
 }
 
 interface ApiTimePattern {
@@ -47,6 +47,7 @@ const getStatusText = (status: string) => {
     case "active": return "정상";
     case "maintenance": return "점검중";
     case "offline": return "오프라인";
+    case "full": return "포화";
     default: return "알 수 없음";
   }
 };
@@ -89,7 +90,7 @@ export function Analytics() {
     async function fetchInitialData() {
       try {
         // 3-1. 장치 목록 (Dropdown)
-        const devicesRes = await fetch(`http://smart-smoke-env.eba-nnpifr7u.ap-northeast-2.elasticbeanstalk.com/devices`, { cache: 'no-store' });
+        const devicesRes = await fetch(`https://u0r3k4is4k.execute-api.ap-northeast-2.amazonaws.com/Prod/devices`, { cache: 'no-store' });
         const devicesResponse = await devicesRes.json();
         const apiData: ApiDevice[] = devicesResponse.data;
         setDevices(apiData);
@@ -105,7 +106,7 @@ export function Analytics() {
       try {
         // 3-2. 지역별 차트
         setIsRegionalLoading(true);
-        const regionalRes = await fetch(`http://smart-smoke-env.eba-nnpifr7u.ap-northeast-2.elasticbeanstalk.com/analytics/regional`, { cache: 'no-store' });
+        const regionalRes = await fetch(`https://u0r3k4is4k.execute-api.ap-northeast-2.amazonaws.com/Prod/analytics/regional`, { cache: 'no-store' });
         const regionalResponse = await regionalRes.json();
         setRegionalData(regionalResponse.data.regional_stats);
       } catch (error) {
@@ -117,7 +118,7 @@ export function Analytics() {
       try {
         // 3-3. 고정 인사이트
         setIsInsightsLoading(true);
-        const insightsRes = await fetch(`http://smart-smoke-env.eba-nnpifr7u.ap-northeast-2.elasticbeanstalk.com/analytics/insights`, { cache: 'no-store' });
+        const insightsRes = await fetch(`https://u0r3k4is4k.execute-api.ap-northeast-2.amazonaws.com/Prod/analytics/insights`, { cache: 'no-store' });
         const insightsResponse = await insightsRes.json();
         setInsights(insightsResponse.data.insights);
       } catch (error) {
@@ -140,7 +141,7 @@ export function Analytics() {
       setIsKpiLoading(true);
       try {
         // 1. 👇 API 1개만 호출 (weekly, daily API 삭제)
-        const res = await fetch(`http://smart-smoke-env.eba-nnpifr7u.ap-northeast-2.elasticbeanstalk.com/devices/${selectedDeviceId}/usage-logs`);
+        const res = await fetch(`https://u0r3k4is4k.execute-api.ap-northeast-2.amazonaws.com/Prod/devices/${selectedDeviceId}/usage-logs`);
 
         if (!res.ok) {
           throw new Error(`Failed to fetch usage logs: ${res.statusText}`);
@@ -149,7 +150,7 @@ export function Analytics() {
         const response = await res.json();
         
         if (response.data) {
-          const data = response.data;
+          const data = response.logs;
           
           // 2. 👇 시간대별 차트: "data.time_pattern" -> "data.logs"로 수정
           const logs: ApiTimePattern[] | undefined = data.logs; 
