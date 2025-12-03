@@ -15,8 +15,11 @@ interface ApiDevice {
 }
 
 interface ApiTimePattern {
-  label: string;
+  device_id: string;
+  period_start: string;
+  period_end: string;
   drop_count: number;
+  full_events: number;
 }
 
 interface ApiWeeklyUsage {
@@ -150,25 +153,38 @@ export function Analytics() {
         const response = await res.json();
         
         if (response.data) {
-          const data = response.logs;
+          const data = response.data;
           
-          // 2. 👇 시간대별 차트: "data.time_pattern" -> "data.logs"로 수정
-          const logs: ApiTimePattern[] | undefined = data.logs; 
+          // 2. 👇 시간대별 차트: data.logs 배열 사용
+          const logs = data.logs; 
           
           if (logs && logs.length > 0) {
-            const mappedData = logs.map(d => ({
-              label: d.label, // (API의 label: "00:00")
+            const mappedData = logs.map((d: ApiTimePattern) => ({
+              label: d.period_start.split(' ')[1], // "2025-11-08 00:00"에서 "00:00" 추출
               count: d.drop_count
             }));
             setHourlyData(mappedData);
+            
+            // 3. 👇 KPI 카드 데이터: logs에서 계산
+            // 일평균 계산
+            const totalDrops = logs.reduce((sum: number, log: ApiTimePattern) => sum + log.drop_count, 0);
+            const avgPerPeriod = totalDrops / logs.length;
+            setDailyAverage(avgPerPeriod);
+            
+            // 피크 시간 계산
+            const maxLog = logs.reduce((max: ApiTimePattern, log: ApiTimePattern) => 
+              log.drop_count > max.drop_count ? log : max
+            , logs[0]);
+            setPeakHour(maxLog.period_start.split(' ')[1] || "N/A");
+            
+            // 주간 증가율 (임시로 0으로 설정)
+            setWeeklyUsage({ growth_rate: 0, trend: "stable" });
           } else {
             setHourlyData([]);
+            setDailyAverage(null);
+            setPeakHour("N/A");
+            setWeeklyUsage(null);
           }
-
-          // 3. 👇 KPI 카드 데이터: 이 API 응답에서 바로 설정
-          setWeeklyUsage(data.weekly_usage || null);
-          setDailyAverage(data.daily_average || null);
-          setPeakHour(data.peak_time_slot || "N/A"); // (API의 peak_time_slot: "12:00")
           
         } else {
           // API가 { success: false } 등을 반환한 경우
