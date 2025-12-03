@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
+import Script from "next/script"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -26,6 +27,10 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased">
+        <Script
+          src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=7zfkicd25y"
+          strategy="beforeInteractive"
+        />
         <Suspense fallback={null}>{children}</Suspense>
         <Analytics />
       </body>
